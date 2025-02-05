@@ -60,6 +60,13 @@
                                         <span class="d-flex align-items-center bg-danger text-white px-2">
                                             {{ stoplosses[position.tsym] }}
                                         </span>
+                                        <!-- Input field for direct editing of stoploss value -->
+                                         <!-- <input class="btn btn-sm btn-outline"
+                                            type="number"
+                                            v-model="stoplossInputValue"
+                                            @input="onStoplossChange(position)"
+                                            step="0.05" min="0.05" style="width: 80px; text-align: center;"
+                                            :placeholder="stoplosses[position.tsym] ? stoplosses[position.tsym] : 'Enter SL'" /> -->
                                         <button class="btn btn-sm btn-outline-success"
                                             @click="$emit('increase-stoploss', position)">
                                             + SL
@@ -68,6 +75,7 @@
                                 </div>
                                 <div v-else>-</div>
                             </div>
+                            <!-- Buttons -->
                             <div class="btn-group mt-2" role="group" style="width: 165px;">
                                 <button class="btn btn-sm btn-outline"
                                     v-if="trailingStoplosses[position.tsym] === null && stoplosses[position.tsym] === null"
@@ -79,6 +87,11 @@
                                     @click="$emit('set-stoploss', position, trailingStoplosses[position.tsym] !== null ? 'convert_to_sl' : 'convert_to_tsl')">
                                     {{ trailingStoplosses[position.tsym] !== null ? 'S' : 'T' }}
                                 </button>
+                                <!-- <input class="btn btn-sm btn-outline"
+                                    v-if="trailingStoplosses[position.tsym] !== null || stoplosses[position.tsym] !== null"
+                                    @click="$emit('set-stoploss', position, trailingStoplosses[position.tsym] !== null ? 'convert_to_sl' : 'convert_to_tsl')">
+                                    {{ trailingStoplosses[position.tsym] !== null ? 'S' : 'T' }}
+                                </input> -->
                                 <button
                                     v-if="trailingStoplosses[position.tsym] !== null || stoplosses[position.tsym] !== null"
                                     class="btn btn-sm btn-outline" @click="$emit('remove-stoploss', position)">
@@ -87,6 +100,7 @@
                             </div>
                         </td>
                         <td v-else>-</td>
+                        <!-- LTP -->
                         <td style="width: 80px;"
                             :class="{ 'text-success': parseFloat(positionLTPs[position.tsym]) > parseFloat(position.totbuyavgprc), 'text-danger': parseFloat(positionLTPs[position.tsym]) < parseFloat(position.totbuyavgprc) }">
                             {{ positionLTPs[position.tsym] }}

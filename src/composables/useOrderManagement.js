@@ -24,6 +24,7 @@ import {
   enableTarget,
   stoplossValue,
   targetValue,
+  triggerPrice,
   limitPrice,
   selectedFlattradePositionsSet,
   selectedShoonyaPositionsSet
@@ -34,6 +35,9 @@ import { getExchangeSegment, getProductTypeValue } from '@/composables/useTradeC
 
 // Order Management Composables
 import { selectedLots, getTransactionType } from '@/composables/useTradeConfiguration'
+
+// CurrentLTP Composables
+import { getCurrentLTP } from '@/composables/useTradeView'
 
 // Portfolio Management Composables
 import {
@@ -66,6 +70,10 @@ export const prepareOrderPayload = (
       price = getCurrentLTP().toString()
       priceType = 'LMT'
       break
+    case 'SL_LMT':
+      price = limitPrice.value.toString()
+      priceType = 'SL-LMT'
+      break
   }
 
   const commonPayload = {
@@ -81,6 +89,11 @@ export const prepareOrderPayload = (
     ret: 'DAY',
     ordersource: 'API'
   }
+
+  if (commonPayload.prctyp === 'SL-LMT') {
+    commonPayload.trgprc = triggerPrice.value.toString()
+  }
+  // console.log('comn play', commonPayload)
 
   switch (selectedBroker.value?.brokerName) {
     case 'Flattrade':
@@ -126,6 +139,7 @@ export const placeOrder = async (transactionType, drvOptionType) => {
         exchangeSegment
       )
       orderData.qty = quantityToPlace.toString()
+      console.log('Order Data: ', orderData)
 
       // Handle dynamic price updates for LMT_LTP
       if (['LMT_LTP'].includes(selectedOrderType.value)) {

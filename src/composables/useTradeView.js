@@ -92,7 +92,8 @@ import {
   wsConnectionState,
   messageQueue,
   stoplossValue,
-  targetValue
+  targetValue,
+  triggerPrice
 } from '@/stores/globalStore'
 
 // Kill Switch Composables
@@ -359,6 +360,12 @@ export const availableStrikes = computed(() => {
 export const isValidLimitPrice = computed(() => {
   return limitPrice.value > 0 && limitPrice.value !== ''
 })
+
+export const isValidTriggerPrice = computed(() => {
+  return triggerPrice.value > 0 && triggerPrice.value !== ''
+})
+
+
 export const limitPriceErrorMessage = computed(() => {
   if (limitPrice.value === '') {
     return 'Limit price is required.'
@@ -463,6 +470,14 @@ export const handleOrderClick = async (transactionType, optionType) => {
   if (['LMT'].includes(selectedOrderType.value)) {
     // Set initial limit price based on the order type
     handleOrderTypeChange()
+  } else if (['SL_LMT'].includes(selectedOrderType.value)) {
+    // For sl limit orders, filling values from stoploss & target as trigger & limit.
+    triggerPrice.value = stoplossValue.value
+    limitPrice.value = targetValue.value
+    // console.log(triggerPrice.value, limitPrice.value)
+    // After that placing an order. 
+    await placeOrder(transactionType, optionType)
+
   } else {
     // For market orders, place the order directly
     await placeOrder(transactionType, optionType)
@@ -548,11 +563,13 @@ export const getSecurityIdForSymbol = (symbol) => {
   return strike ? strike.securityId : null
 }
 export const validateAndPlaceOrder = async () => {
-  if (isValidLimitPrice.value) {
+  if (selectedOrderType.value === "LMT" && isValidLimitPrice.value) {
+    await placeOrder(modalTransactionType.value, modalOptionType.value)
+  } else if (selectedOrderType.value === "SL_LMT" && isValidLimitPrice.value && isValidTriggerPrice.value) {
     await placeOrder(modalTransactionType.value, modalOptionType.value)
   } else {
-    console.error('Invalid limit price')
-    toastMessage.value = 'Invalid limit price'
+    console.error('Invalid Trigger or limit price for: ', selectedOrderType.value)
+    toastMessage.value = 'Invalid Trigger or limit price for: '+selectedOrderType.value
     showToast.value = true
   }
 }
@@ -567,6 +584,10 @@ export const handleOrderTypeChange = () => {
     case 'LMT':
     case 'LMT_LTP':
       limitPrice.value = getCurrentLTP()
+      break
+    case 'SL_LMT':
+      limitPrice.value = getCurrentLTP()
+        // limitPrice.value = null
       break
     default:
       limitPrice.value = null

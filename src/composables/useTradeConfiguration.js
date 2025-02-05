@@ -73,10 +73,11 @@ export const getProductTypeValue = (productType) => {
 }
 
 export const getTransactionType = (type) => {
+  var type = type === 'BUY' || type === 'B' ? 'B' : 'S'
   if (selectedBroker.value?.brokerName === 'Flattrade') {
-    return type === 'BUY' ? 'B' : 'S'
+    return type
   } else if (selectedBroker.value?.brokerName === 'Shoonya') {
-    return type === 'BUY' ? 'B' : 'S'
+    return type
   }
   return type
 }
@@ -111,7 +112,7 @@ export const orderTypes = computed(() => {
     selectedBroker.value?.brokerName === 'Flattrade' ||
     selectedBroker.value?.brokerName === 'Shoonya'
   ) {
-    return ['MKT', 'LMT', 'LMT_LTP']
+    return ['MKT', 'LMT', 'LMT_LTP', 'SL_LMT']
   }
   return []
 })
@@ -124,6 +125,8 @@ export const displayOrderTypes = computed(() => {
         return 'Limit'
       case 'LMT_LTP':
         return 'Limit at LTP'
+      case 'SL_LMT':
+        return 'SL Limit'
       default:
         return type
     }
