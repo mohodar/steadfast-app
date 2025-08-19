@@ -26,7 +26,8 @@ import {
   targetValue,
   limitPrice,
   selectedFlattradePositionsSet,
-  selectedShoonyaPositionsSet
+  selectedShoonyaPositionsSet,
+  paperTradingMode
 } from '@/stores/globalStore'
 
 // Trade Configuration Composables
@@ -97,6 +98,29 @@ export const prepareOrderPayload = (
       throw new Error('Unsupported broker')
   }
 }
+// Function to simulate paper trading order placement
+const simulatePaperTradeOrder = async (orderData, transactionType, drvOptionType, selectedStrike, lotsToPlace, quantityToPlace) => {
+  // Create a simulated response that mimics a successful order
+  const simulatedOrderId = 'PAPER_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+  
+  // Create a simulated response object
+  const simulatedResponse = {
+    data: {
+      stat: 'Ok',
+      norenordno: simulatedOrderId,
+      request_time: new Date().toISOString()
+    }
+  };
+  
+  console.log(`[PAPER TRADING] Simulated order for ${lotsToPlace} lots (${quantityToPlace} quantity)`);
+  console.log('[PAPER TRADING] Order details:', orderData);
+  
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  return simulatedResponse;
+};
+
 export const placeOrder = async (transactionType, drvOptionType) => {
   try {
     let selectedStrike =
@@ -133,25 +157,43 @@ export const placeOrder = async (transactionType, drvOptionType) => {
         orderData.prc = currentLTP.toString()
       }
 
-      let response
-      if (selectedBroker.value?.brokerName === 'Flattrade') {
-        const FLATTRADE_API_TOKEN = localStorage.getItem('FLATTRADE_API_TOKEN')
-        const payload = qs.stringify(orderData)
-        response = await axios.post(`${BASE_URL}/flattrade/placeOrder`, payload, {
-          headers: {
-            Authorization: `Bearer ${FLATTRADE_API_TOKEN}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        })
-      } else if (selectedBroker.value?.brokerName === 'Shoonya') {
-        const SHOONYA_API_TOKEN = localStorage.getItem('SHOONYA_API_TOKEN')
-        const payload = qs.stringify(orderData)
-        response = await axios.post(`${BASE_URL}/shoonya/placeOrder`, payload, {
-          headers: {
-            Authorization: `Bearer ${SHOONYA_API_TOKEN}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        })
+      let response;
+      
+      // Check if paper trading mode is enabled
+      if (paperTradingMode.value) {
+        // Simulate paper trading order
+        response = await simulatePaperTradeOrder(
+          orderData, 
+          transactionType, 
+          drvOptionType, 
+          selectedStrike, 
+          lotsToPlace, 
+          quantityToPlace
+        );
+        
+        // Add a visual indicator that this is a paper trade
+        toastMessage.value = `[PAPER TRADE] Order placed for ${lotsToPlace} lots`;
+      } else {
+        // Real trading - proceed with actual API calls
+        if (selectedBroker.value?.brokerName === 'Flattrade') {
+          const FLATTRADE_API_TOKEN = localStorage.getItem('FLATTRADE_API_TOKEN')
+          const payload = qs.stringify(orderData)
+          response = await axios.post(`${BASE_URL}/flattrade/placeOrder`, payload, {
+            headers: {
+              Authorization: `Bearer ${FLATTRADE_API_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          })
+        } else if (selectedBroker.value?.brokerName === 'Shoonya') {
+          const SHOONYA_API_TOKEN = localStorage.getItem('SHOONYA_API_TOKEN')
+          const payload = qs.stringify(orderData)
+          response = await axios.post(`${BASE_URL}/shoonya/placeOrder`, payload, {
+            headers: {
+              Authorization: `Bearer ${SHOONYA_API_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          })
+        }
       }
 
       console.log(`Placed order for ${lotsToPlace} lots (${quantityToPlace} quantity)`)
@@ -168,25 +210,43 @@ export const placeOrder = async (transactionType, drvOptionType) => {
     console.log(
       `All orders placed successfully. Total: ${placedLots} lots (${fullOrderQuantity} quantity)`
     )
-    toastMessage.value = `Order(s) placed successfully for ${placedLots} lots`
+    
+    if (!paperTradingMode.value) {
+      toastMessage.value = `Order(s) placed successfully for ${placedLots} lots`
+    }
     showToast.value = true
 
     // Add a delay before fetching updated data
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Update both orders and positions
     await updateOrdersAndPositions()
-
+    
+    // Force update orders regardless of active tab
+    const brokerName = selectedBroker.value?.brokerName
+    if (brokerName === 'Flattrade') {
+      await fetchFlattradeOrdersTradesBook()
+    } else if (brokerName === 'Shoonya') {
+      await fetchShoonyaOrdersTradesBook()
+    }
+    
+    // Add another small delay to ensure positions are fully updated
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    
     // Find the new position after updating positions
     const newPosition = findNewPosition(selectedStrike.tradingSymbol)
-
+    
+    console.log('Applying auto risk management for position:', newPosition ? newPosition.tsym : 'Position not found')
+    
     // If predefined stoploss is enabled, set stoploss for the new position
-    if (enableStoploss.value && stoplossValue.value > 0 && newPosition) {
+    if (enableStoploss.value && newPosition) {
+      console.log(`Applying auto stoploss with value: ${stoplossValue.value}`)
       setStoploss(newPosition, 'static')
     }
 
     // If predefined target is enabled, set target for the new position
-    if (enableTarget.value && targetValue.value > 0 && newPosition) {
+    if (enableTarget.value && newPosition) {
+      console.log(`Applying auto target with value: ${targetValue.value}`)
       setTarget(newPosition)
     }
 
@@ -240,24 +300,42 @@ export const placeOrderForPosition = async (transactionType, optionType, positio
       }
 
       let response
-      if (selectedBroker.value?.brokerName === 'Flattrade') {
-        const FLATTRADE_API_TOKEN = localStorage.getItem('FLATTRADE_API_TOKEN')
-        const payload = qs.stringify(orderData)
-        response = await axios.post(`${BASE_URL}/flattrade/placeOrder`, payload, {
-          headers: {
-            Authorization: `Bearer ${FLATTRADE_API_TOKEN}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        })
-      } else if (selectedBroker.value?.brokerName === 'Shoonya') {
-        const SHOONYA_API_TOKEN = localStorage.getItem('SHOONYA_API_TOKEN')
-        const payload = qs.stringify(orderData)
-        response = await axios.post(`${BASE_URL}/shoonya/placeOrder`, payload, {
-          headers: {
-            Authorization: `Bearer ${SHOONYA_API_TOKEN}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        })
+      
+      // Check if paper trading mode is enabled
+      if (paperTradingMode.value) {
+        // Simulate paper trading order for position
+        response = await simulatePaperTradeOrder(
+          orderData,
+          transactionType,
+          optionType,
+          { tradingSymbol: position.tsym },
+          quantityToPlace / instrument.lotSize, // Convert quantity to lots
+          quantityToPlace
+        );
+        
+        // Add a visual indicator that this is a paper trade
+        toastMessage.value = `[PAPER TRADE] Order placed for ${getSymbol(position)}`;
+      } else {
+        // Real trading - proceed with actual API calls
+        if (selectedBroker.value?.brokerName === 'Flattrade') {
+          const FLATTRADE_API_TOKEN = localStorage.getItem('FLATTRADE_API_TOKEN')
+          const payload = qs.stringify(orderData)
+          response = await axios.post(`${BASE_URL}/flattrade/placeOrder`, payload, {
+            headers: {
+              Authorization: `Bearer ${FLATTRADE_API_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          })
+        } else if (selectedBroker.value?.brokerName === 'Shoonya') {
+          const SHOONYA_API_TOKEN = localStorage.getItem('SHOONYA_API_TOKEN')
+          const payload = qs.stringify(orderData)
+          response = await axios.post(`${BASE_URL}/shoonya/placeOrder`, payload, {
+            headers: {
+              Authorization: `Bearer ${SHOONYA_API_TOKEN}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          })
+        }
       }
 
       console.log(`Placed order for ${quantityToPlace} quantity`)
@@ -267,7 +345,10 @@ export const placeOrderForPosition = async (transactionType, optionType, positio
     }
 
     console.log(`All orders placed successfully. Total: ${placedQuantity} quantity`)
-    toastMessage.value = `Order(s) placed successfully for ${getSymbol(position)}`
+    
+    if (!paperTradingMode.value) {
+      toastMessage.value = `Order(s) placed successfully for ${getSymbol(position)}`
+    }
     showToast.value = true
 
     // Add a delay before fetching updated data
@@ -326,7 +407,11 @@ export const closeAllPositions = async () => {
     await updateFundLimits()
 
     if (positionsClosed) {
-      toastMessage.value = `All ${selectedBroker.value?.brokerName} positions closed successfully`
+      if (paperTradingMode.value) {
+        toastMessage.value = `[PAPER TRADE] All ${selectedBroker.value?.brokerName} positions closed`
+      } else {
+        toastMessage.value = `All ${selectedBroker.value?.brokerName} positions closed successfully`
+      }
     } else {
       toastMessage.value = `No positions to close for ${selectedBroker.value?.brokerName}`
     }

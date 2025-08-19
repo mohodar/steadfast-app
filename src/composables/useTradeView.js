@@ -460,7 +460,7 @@ export const handleOrderClick = async (transactionType, optionType) => {
   }
 
   // If it's a limit order type, the modal will be shown automatically due to data-bs-toggle and data-bs-target
-  if (['LMT'].includes(selectedOrderType.value)) {
+  if (['LMT', 'LMT_LTP'].includes(selectedOrderType.value)) {
     // Set initial limit price based on the order type
     handleOrderTypeChange()
   } else {
@@ -964,6 +964,26 @@ watch(stickyMTM, (newValue) => {
   localStorage.setItem('stickyMTM', JSON.stringify(newValue))
 })
 // ... (add all other watchers here)
+export const updateTargetValue = () => {
+  // Ensure target value is a positive number
+  if (targetValue.value < 0) {
+    targetValue.value = 0
+  }
+  
+  // Save to localStorage
+  localStorage.setItem('targetValue', targetValue.value.toString())
+}
+
+export const updateStoplossValue = () => {
+  // Ensure stoploss value is a positive number
+  if (stoplossValue.value < 0) {
+    stoplossValue.value = 0
+  }
+  
+  // Save to localStorage
+  localStorage.setItem('stoplossValue', stoplossValue.value.toString())
+}
+
 export const handleFormInputMouseScroll = (event, options) => {
   if (isFormDisabled.value) return
 
@@ -1006,6 +1026,7 @@ export const handleFormInputMouseScroll = (event, options) => {
       const newStoploss = Number(stoplossValue.value) + direction
       if (newStoploss >= 0) {
         stoplossValue.value = newStoploss // This will automatically update localStorage
+        updateStoplossValue()
       }
       break
 
@@ -1014,6 +1035,7 @@ export const handleFormInputMouseScroll = (event, options) => {
       const newTarget = Number(targetValue.value) + direction
       if (newTarget >= 0) {
         targetValue.value = newTarget // This will automatically update localStorage
+        updateTargetValue()
       }
       break
   }

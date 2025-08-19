@@ -32,16 +32,24 @@ export const setStoploss = (position, type) => {
   const ltp = parseFloat(positionLTPs.value[position.tsym])
   if (isNaN(ltp)) {
     console.error(`Invalid LTP for ${position.tsym}: ${positionLTPs.value[position.tsym]}`)
-    return
+    console.log('Using fallback LTP from position data')
+    // Try to get LTP from position data as fallback
+    const fallbackLtp = parseFloat(position.lp || position.avgPrice || position.prc)
+    if (isNaN(fallbackLtp)) {
+      console.error(`No valid LTP found for ${position.tsym}`)
+      return
+    }
+    positionLTPs.value[position.tsym] = fallbackLtp
   }
 
+  // Ensure we have a valid stoploss value
   const stoplossValueNum = parseFloat(stoplossValue.value)
-  if (isNaN(stoplossValueNum)) {
-    console.error(`Invalid stoploss value: ${stoplossValue.value}`)
-    return
+  if (isNaN(stoplossValueNum) || stoplossValueNum <= 0) {
+    console.error(`Invalid stoploss value: ${stoplossValue.value}, using default value of 10`)
+    stoplossValue.value = 10
   }
 
-  const isLongPosition = position.netqty > 0
+  const isLongPosition = (position.netqty > 0 || position.netQty > 0)
   let stoplossPrice
 
   try {
@@ -117,20 +125,37 @@ export const setTarget = (position) => {
     return
   }
 
-  if (enableTarget.value && targetValue.value > 0) {
-    const ltp = positionLTPs.value[position.tsym]
-
-    // Set target above the LTP for all positions, rounded to 2 decimal places
-    targets.value[position.tsym] = Number(
-      (parseFloat(ltp) + parseFloat(targetValue.value)).toFixed(2)
-    )
-
-    // console.log(`Target set for ${position.tsym}: LTP = ${ltp}, TargetValue = ${targetValue.value}, Target = ${targets.value[position.tsym]}`);
-  } else {
-    // If target is not enabled or targetValue is not set, remove any existing target
-    targets.value[position.tsym] = null
-    // console.log(`Target removed for ${position.tsym}`);
+  // Get LTP from position data
+  let ltp = parseFloat(positionLTPs.value[position.tsym])
+  if (isNaN(ltp)) {
+    console.error(`Invalid LTP for ${position.tsym}: ${positionLTPs.value[position.tsym]}`)
+    console.log('Using fallback LTP from position data')
+    // Try to get LTP from position data as fallback
+    const fallbackLtp = parseFloat(position.lp || position.avgPrice || position.prc)
+    if (isNaN(fallbackLtp)) {
+      console.error(`No valid LTP found for ${position.tsym}`)
+      return
+    }
+    ltp = fallbackLtp
+    positionLTPs.value[position.tsym] = fallbackLtp
   }
+
+  // Ensure we have a valid target value
+  if (isNaN(parseFloat(targetValue.value)) || parseFloat(targetValue.value) <= 0) {
+    console.error(`Invalid target value: ${targetValue.value}, using default value of 50`)
+    targetValue.value = 50
+  }
+
+  const isLongPosition = (position.netqty > 0 || position.netQty > 0)
+  
+  // Set target based on position direction
+  targets.value[position.tsym] = Number(
+    (isLongPosition ? 
+      parseFloat(ltp) + parseFloat(targetValue.value) : 
+      parseFloat(ltp) - parseFloat(targetValue.value)).toFixed(2)
+  )
+
+  console.log(`Target set for ${position.tsym}: LTP = ${ltp}, TargetValue = ${targetValue.value}, Target = ${targets.value[position.tsym]}`)
 }
 export const removeTarget = (position) => {
   targets.value[position.tsym] = null
@@ -151,7 +176,7 @@ export const checkTargets = (newLTPs) => {
     // console.log('Target is disabled.');
     return
   }
-  // console.log('Checking targets...');
+  console.log('Checking targets...');
   const validTargets = Object.entries(targets.value).filter(
     ([tsym, target]) => target !== null && target !== undefined
   )
@@ -162,15 +187,17 @@ export const checkTargets = (newLTPs) => {
   }
 
   for (const [tsym, target] of validTargets) {
-    const currentLTP = positionLTPs.value[tsym]
+    const currentLTP = parseFloat(positionLTPs.value[tsym])
     const position = [...flatTradePositionBook.value, ...shoonyaPositionBook.value].find(
       (p) => p.tsym === tsym
     )
 
-    // console.log(`Checking target for ${tsym}: Current LTP = ${currentLTP}, Target = ${target}`);
-    if (position && currentLTP) {
-      const isLongPosition = position.netqty > 0
-      if ((isLongPosition && currentLTP >= target) || (!isLongPosition && currentLTP <= target)) {
+    console.log(`Checking target for ${tsym}: Current LTP = ${currentLTP}, Target = ${target}`);
+    if (position && !isNaN(currentLTP)) {
+      const isLongPosition = (position.netqty > 0 || position.netQty > 0)
+      const targetValue = parseFloat(target)
+      
+      if ((isLongPosition && currentLTP >= targetValue) || (!isLongPosition && currentLTP <= targetValue)) {
         console.log(`Target reached for ${tsym}. Placing order to close position.`)
         const transactionType = isLongPosition ? 'S' : 'B'
         placeOrderForPosition(
@@ -191,10 +218,12 @@ export const checkStoplosses = () => {
     return
   }
 
+  console.log('Checking stoplosses...')
+  
   const stoplossValueNum = parseFloat(stoplossValue.value)
-  if (isNaN(stoplossValueNum)) {
-    console.error(`Invalid stoploss value: ${stoplossValue.value}`)
-    return
+  if (isNaN(stoplossValueNum) || stoplossValueNum <= 0) {
+    console.error(`Invalid stoploss value: ${stoplossValue.value}, using default value of 10`)
+    stoplossValue.value = 10
   }
 
   // Check static stoplosses
@@ -204,13 +233,18 @@ export const checkStoplosses = () => {
         (p) => p.tsym === tsym
       )
       if (position) {
-        const isLongPosition = position.netqty > 0
+        const isLongPosition = (position.netqty > 0 || position.netQty > 0)
         const currentLTP = parseFloat(positionLTPs.value[tsym])
+        const stopLossValue = parseFloat(sl)
+        
         if (isNaN(currentLTP)) {
           console.error(`Invalid LTP for ${tsym}: ${positionLTPs.value[tsym]}`)
           continue
         }
-        if ((isLongPosition && currentLTP <= sl) || (!isLongPosition && currentLTP >= sl)) {
+        
+        console.log(`Checking SL for ${tsym}: LTP ${currentLTP}, SL ${stopLossValue}, Position: ${isLongPosition ? 'Long' : 'Short'}`)
+        
+        if ((isLongPosition && currentLTP <= stopLossValue) || (!isLongPosition && currentLTP >= stopLossValue)) {
           console.log(`Static SL hit for ${tsym}: LTP ${currentLTP}, SL ${sl}`)
           placeOrderForPosition(
             isLongPosition ? 'S' : 'B',
@@ -232,20 +266,26 @@ export const checkStoplosses = () => {
         (p) => p.tsym === tsym
       )
       if (position) {
-        const isLongPosition = position.netqty > 0
+        const isLongPosition = (position.netqty > 0 || position.netQty > 0)
         const currentLTP = parseFloat(positionLTPs.value[tsym])
+        const trailingStoplossValue = parseFloat(tsl)
+        
         if (isNaN(currentLTP)) {
           console.error(`Invalid LTP for ${tsym}: ${positionLTPs.value[tsym]}`)
           continue
         }
+        
+        console.log(`Checking TSL for ${tsym}: LTP ${currentLTP}, TSL ${trailingStoplossValue}, Position: ${isLongPosition ? 'Long' : 'Short'}`)
 
         if (isLongPosition) {
-          if (currentLTP > tsl + stoplossValueNum) {
+          if (currentLTP > trailingStoplossValue + stoplossValueNum) {
             // Update TSL for long positions
-            trailingStoplosses.value[tsym] = parseFloat((currentLTP - stoplossValueNum).toFixed(2))
-          } else if (currentLTP <= tsl && !tslHitPositions.has(tsym)) {
+            const newTSL = parseFloat((currentLTP - stoplossValueNum).toFixed(2))
+            console.log(`Updating TSL for ${tsym} from ${trailingStoplossValue} to ${newTSL}`)
+            trailingStoplosses.value[tsym] = newTSL
+          } else if (currentLTP <= trailingStoplossValue && !tslHitPositions.has(tsym)) {
             // Hit TSL for long positions
-            console.log(`TSL hit for ${tsym}: LTP ${currentLTP}, TSL ${tsl}`)
+            console.log(`TSL hit for ${tsym}: LTP ${currentLTP}, TSL ${trailingStoplossValue}`)
             placeOrderForPosition('S', position.tsym.includes('C') ? 'CALL' : 'PUT', position)
             removeStoploss(position)
             toastMessage.value = 'Trailing Stoploss hit for ' + tsym
@@ -253,12 +293,14 @@ export const checkStoplosses = () => {
             tslHitPositions.add(tsym) // Mark TSL as hit
           }
         } else {
-          if (currentLTP < tsl - stoplossValueNum) {
+          if (currentLTP < trailingStoplossValue - stoplossValueNum) {
             // Update TSL for short positions
-            trailingStoplosses.value[tsym] = parseFloat((currentLTP + stoplossValueNum).toFixed(2))
-          } else if (currentLTP >= tsl && !tslHitPositions.has(tsym)) {
+            const newTSL = parseFloat((currentLTP + stoplossValueNum).toFixed(2))
+            console.log(`Updating TSL for ${tsym} from ${trailingStoplossValue} to ${newTSL}`)
+            trailingStoplosses.value[tsym] = newTSL
+          } else if (currentLTP >= trailingStoplossValue && !tslHitPositions.has(tsym)) {
             // Hit TSL for short positions
-            console.log(`TSL hit for ${tsym}: LTP ${currentLTP}, TSL ${tsl}`)
+            console.log(`TSL hit for ${tsym}: LTP ${currentLTP}, TSL ${trailingStoplossValue}`)
             placeOrderForPosition('B', position.tsym.includes('C') ? 'CALL' : 'PUT', position)
             removeStoploss(position)
             toastMessage.value = 'Trailing Stoploss hit for ' + tsym

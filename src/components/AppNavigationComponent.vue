@@ -6,6 +6,20 @@
           <img src="/steadfast_logo.png" class="Navigation__logo" alt="Steadfast" />
           <span class="ms-2 fw-bold text-color d-none d-md-inline">Steadfast</span>
         </RouterLink>
+        <!-- Paper Trading Mode Indicator -->
+        <div v-if="paperTradingMode" class="paper-trading-indicator me-2">
+          <span class="badge bg-warning text-dark">
+            <font-awesome-icon icon="file-alt" class="me-1" />
+            PAPER TRADING
+          </span>
+        </div>        <!-- Current Time Display (Kolkata) -->
+        <div class="current-time-display">
+          <span class="badge bg-dark">
+            <font-awesome-icon icon="clock" class="me-1" />
+            {{ kolkataTime }}
+          </span>
+        </div>
+        
         <button
           class="navbar-toggler"
           type="button"
@@ -59,13 +73,46 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { FontAwesomeIcon } from '@/font-awesome'
 import { useRouter } from 'vue-router'
 import NotificationComponent from './NotificationComponent.vue'
 
 // Global State
-import { notificationSound, toastMessage, showToast } from '@/stores/globalStore'
+import { notificationSound, toastMessage, showToast, paperTradingMode } from '@/stores/globalStore'
+
+// Kolkata time display
+const kolkataTime = ref('')
+let timeInterval = null
+
+// Function to update Kolkata time with seconds
+const updateKolkataTime = () => {
+  const now = new Date()
+  
+  // Convert to Kolkata time (UTC+5:30)
+  const options = {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }
+  
+  kolkataTime.value = now.toLocaleTimeString('en-US', options)
+}
+
+// Set up interval to update time every second
+onMounted(() => {
+  updateKolkataTime() // Initial update
+  timeInterval = setInterval(updateKolkataTime, 1000)
+})
+
+// Clean up interval when component is unmounted
+onBeforeUnmount(() => {
+  if (timeInterval) {
+    clearInterval(timeInterval)
+  }
+})
 
 const routes = ref([
   { path: '/steadfast', name: 'Trade', icon: ['fas', 'bolt'], iconClass: 'text-danger' },
@@ -89,6 +136,47 @@ const router = useRouter()
 </script>
 
 <style scoped>
+.current-time-display {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.current-time-display .badge {
+  font-weight: bold;
+  padding: 0.5rem 0.75rem;
+  background-color: #343a40;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 1.2rem; /* Increased font size */
+}
+
+.paper-trading-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.paper-trading-indicator .badge {
+  font-weight: bold;
+  padding: 0.5rem 0.75rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .premium-button {
   position: relative;
   overflow: hidden;

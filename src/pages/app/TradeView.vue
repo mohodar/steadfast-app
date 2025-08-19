@@ -64,37 +64,8 @@
             </select>
           </div>
 
-          <!-- Quantity Selection -->
-          <div class="col-6 col-md-4 col-lg-2">
-            <label for="Quantity" class="form-label mb-0 small">
-              {{ selectedLots }} Lot{{ selectedLots !== 1 ? 's' : '' }} / Quantity
-            </label>
-            <div class="input-group input-group-sm">
-              <input type="number" id="Quantity" class="form-control form-control-sm" v-model.number="selectedLots"
-                :min="1" :max="maxLots" @input="updateSelectedQuantity"
-                @wheel.prevent="(e) => handleFormInputMouseScroll(e, { type: 'quantity' })"
-                :class="{ 'disabled-form': isFormDisabled }" />
-              <span class="input-group-text">{{ selectedQuantity }}</span>
-            </div>
-          </div>
-
-          <!-- Order Type -->
-          <div class="col-6 col-md-4 col-lg-2 mt-md-1 mt-lg-2">
-            <label for="OrderType" class="form-label mb-0 small">Order Type</label>
-            <div class="input-group input-group-sm">
-              <select id="OrderType" class="form-select form-select-sm w-75" aria-label="OrderType"
-                v-model="selectedOrderType" :class="{ 'disabled-form': isFormDisabled }"
-                @change="handleOrderTypeChange">
-                <option v-for="(displayType, index) in displayOrderTypes" :key="orderTypes[index]"
-                  :value="orderTypes[index]">
-                  {{ displayType }}
-                </option>
-              </select>
-            </div>
-          </div>
-
           <!-- Market Protection -->
-          <div class="col-6 col-md-4 col-lg-2 mt-md-1 mt-lg-2">
+          <div class="col-6 col-md-4 col-lg-2">
             <label for="MarketProtection" class="form-label mb-0 small">Market Protection</label>
             <select id="Segment" class="form-select form-select-sm" aria-label="Segment"
               :class="{ 'disabled-form': isFormDisabled }" disabled>
@@ -106,6 +77,8 @@
               <option value="5">5%</option>
             </select>
           </div>
+
+
 
           <!-- Predefined Stoploss -->
           <div class="col-6 col-md-4 col-lg-3 mt-md-1 mt-lg-2">
@@ -119,6 +92,7 @@
               <input type="number" class="form-control form-control-sm" id="stoplossValue"
                 aria-label="Predefined Stoploss (points)" v-model="stoplossValue"
                 @wheel.prevent="(e) => handleFormInputMouseScroll(e, { type: 'stoploss' })"
+                @input="updateStoplossValue"
                 :class="{ 'disabled-form': isFormDisabled }" />
               <span class="input-group-text">Points</span>
             </div>
@@ -136,6 +110,7 @@
               <input type="number" class="form-control form-control-sm" id="targetValue"
                 aria-label="Predefined Target (points)" v-model="targetValue"
                 @wheel.prevent="(e) => handleFormInputMouseScroll(e, { type: 'target' })"
+                @input="updateTargetValue"
                 :class="{ 'disabled-form': isFormDisabled }" />
               <span class="input-group-text">Points</span>
             </div>
@@ -308,69 +283,62 @@
 
         <div class="row align-items-center justify-content-between mt-3">
           <!-- Call Strike Buy/Sell Buttons -->
-          <div class="order-1 order-md-1 order-lg-1 col-6 col-md-4 col-lg-4">
-            <div class="btn-group col-12 col-md-10 col-lg-10">
-              <button type="button" class="btn btn-sm btn-success fs-6 my-2 w-75"
+          <div class="order-1 order-md-1 order-lg-1 col-6 col-md-3 col-lg-3">
+            <div class="col-12 col-md-10 col-lg-10">
+              <button type="button" class="btn btn-sm btn-success fs-6 my-2 w-100"
                 @click="handleOrderClick('BUY', 'CALL')"
-                :data-bs-toggle="selectedOrderType === orderTypes[1] ? 'modal' : null"
-                :data-bs-target="selectedOrderType === orderTypes[1] ? '#PlaceLimitOrderWindow' : null">
+                :data-bs-toggle="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? 'modal' : null"
+                :data-bs-target="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? '#PlaceLimitOrderWindow' : null">
                 <kbd v-if="enableHotKeys">
                   <font-awesome-icon icon="arrow-up" />
                 </kbd>
                 Buy CE
               </button>
-              <button type="button"
-                class="btn btn-sm btn-outline-success fs-6 my-2 dropdown-toggle dropdown-toggle-split w-25"
-                data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent" data-bs-offset="0,-7">
-                <span class="visually-hidden">Toggle Dropdown</span>
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" @click="setOrderDetails('BUY', 'CALL')" data-bs-toggle="modal"
-                    data-bs-target="#PlaceLimitOrderWithResetOrderTypeWindow">Place Limit Order</a>
-                </li>
-              </ul>
             </div>
-            <div class="btn-group col-12 col-md-10 col-lg-10">
-              <button type="button" class="btn btn-sm btn-danger fs-6 w-75" @click="handleOrderClick('SELL', 'CALL')"
-                :data-bs-toggle="selectedOrderType === orderTypes[1] ? 'modal' : null"
-                :data-bs-target="selectedOrderType === orderTypes[1] ? '#PlaceLimitOrderWindow' : null">
+            <div class="col-12 col-md-10 col-lg-10">
+              <button type="button" class="btn btn-sm btn-danger fs-6 w-100" @click="handleOrderClick('SELL', 'CALL')"
+                :data-bs-toggle="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? 'modal' : null"
+                :data-bs-target="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? '#PlaceLimitOrderWindow' : null">
                 <kbd v-if="enableHotKeys">
                   <font-awesome-icon icon="arrow-left" />
                 </kbd>
                 Sell CE
               </button>
-              <button type="button"
-                class="btn btn-sm btn-outline-danger fs-6 dropdown-toggle dropdown-toggle-split w-25"
-                data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
-                <span class="visually-hidden">Toggle Dropdown</span>
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" @click="setOrderDetails('SELL', 'CALL')" data-bs-toggle="modal"
-                    data-bs-target="#PlaceLimitOrderWithResetOrderTypeWindow">Place Limit Order</a>
-                </li>
-              </ul>
+            </div>
+          </div>
+
+          <!-- Order Type -->
+          <div class="order-2 order-md-2 order-lg-2 col-6 col-md-2 col-lg-2 text-center">
+            <label for="OrderType" class="form-label mb-0 small">Order Type</label>
+            <div class="input-group input-group-sm">
+              <select id="OrderType" class="form-select form-select-sm w-100" aria-label="OrderType"
+                v-model="selectedOrderType" :class="{ 'disabled-form': isFormDisabled }"
+                @change="handleOrderTypeChange" size="3" style="overflow-y: auto;">
+                <option v-for="(displayType, index) in displayOrderTypes" :key="orderTypes[index]"
+                  :value="orderTypes[index]">
+                  {{ displayType }}
+                </option>
+              </select>
             </div>
           </div>
 
           <!-- Close & Cancel Buttons -->
-          <div class="order-3 order-md-2 order-lg-2 col-12 col-md-4 col-lg-4 text-center">
+          <div class="order-3 order-md-3 order-lg-3 col-6 col-md-2 col-lg-2 text-center">
             <div class="row mt-2">
-              <div class="col-6 col-md-12 col-lg-12">
+              <div class="col-12">
                 <button v-if="selectedShoonyaPositionsSet.size === 0 && selectedFlattradePositionsSet.size === 0"
-                  class="btn btn-sm btn-outline fs-6 col-12 col-md-11 col-lg-10" @click="closeAllPositions">
+                  class="btn btn-sm btn-outline fs-6 col-12" @click="closeAllPositions">
                   <kbd v-if="enableHotKeys">F6</kbd>
                   Close All
                 </button>
                 <button v-if="selectedShoonyaPositionsSet.size > 0 || selectedFlattradePositionsSet.size > 0"
-                  class="btn btn-sm btn-outline fs-6 col-12 col-md-11 col-lg-10" @click="closeSelectedPositions">
+                  class="btn btn-sm btn-outline fs-6 col-12" @click="closeSelectedPositions">
                   <kbd v-if="enableHotKeys">F6</kbd>
                   Close Selected
                 </button>
               </div>
-              <div class="col-6 col-md-12 col-lg-12">
-                <button class="btn btn-sm btn-outline fs-6 col-12 col-md-11 col-lg-10 mt-md-2 mt-lg-2"
+              <div class="col-12">
+                <button class="btn btn-sm btn-outline fs-6 col-12 mt-2"
                   @click="cancelPendingOrders">
                   <kbd v-if="enableHotKeys">F7</kbd>
                   Cancel Orders
@@ -378,50 +346,43 @@
               </div>
             </div>
           </div>
+
+          <!-- Quantity Selection (1 Lot) -->
+          <div class="order-4 order-md-4 order-lg-4 col-6 col-md-2 col-lg-2 text-center">
+            <label for="Quantity" class="form-label mb-0 small">
+              {{ selectedLots }} Lot{{ selectedLots !== 1 ? 's' : '' }} / Quantity
+            </label>
+            <div class="input-group input-group-sm">
+              <input type="number" id="Quantity" class="form-control form-control-sm" v-model.number="selectedLots"
+                :min="1" :max="maxLots" @input="updateSelectedQuantity"
+                @wheel.prevent="(e) => handleFormInputMouseScroll(e, { type: 'quantity' })"
+                :class="{ 'disabled-form': isFormDisabled }" />
+              <span class="input-group-text">{{ selectedQuantity }}</span>
+            </div>
+          </div>
+
           <!-- Put Strike Buy/Sell Buttons -->
-          <div class="order-2 order-md-3 order-lg-3 col-6 col-md-4 col-lg-4 text-end">
-            <div class="btn-group col-12 col-md-10 col-lg-10">
-              <button type="button" class="btn btn-sm btn-success fs-6 my-2 w-75"
+          <div class="order-5 order-md-5 order-lg-5 col-6 col-md-3 col-lg-3 text-end">
+            <div class="col-12 col-md-10 col-lg-10 ms-auto">
+              <button type="button" class="btn btn-sm btn-success fs-6 my-2 w-100"
                 @click="handleOrderClick('BUY', 'PUT')"
-                :data-bs-toggle="selectedOrderType === orderTypes[1] ? 'modal' : null"
-                :data-bs-target="selectedOrderType === orderTypes[1] ? '#PlaceLimitOrderWindow' : null">
+                :data-bs-toggle="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? 'modal' : null"
+                :data-bs-target="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? '#PlaceLimitOrderWindow' : null">
                 <kbd v-if="enableHotKeys">
                   <font-awesome-icon icon="arrow-down" />
                 </kbd>
                 Buy PE
               </button>
-              <button type="button"
-                class="btn btn-sm btn-outline-success fs-6 my-2 dropdown-toggle dropdown-toggle-split w-25"
-                data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent" data-bs-offset="0,-7">
-                <span class="visually-hidden">Toggle Dropdown</span>
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" @click="setOrderDetails('BUY', 'PUT')" data-bs-toggle="modal"
-                    data-bs-target="#PlaceLimitOrderWithResetOrderTypeWindow">Place Limit Order</a>
-                </li>
-              </ul>
             </div>
-            <div class="btn-group col-12 col-md-10 col-lg-10">
-              <button type="button" class="btn btn-sm btn-danger fs-6 w-75" @click="handleOrderClick('SELL', 'PUT')"
-                :data-bs-toggle="selectedOrderType === orderTypes[1] ? 'modal' : null"
-                :data-bs-target="selectedOrderType === orderTypes[1] ? '#PlaceLimitOrderWindow' : null">
+            <div class="col-12 col-md-10 col-lg-10 ms-auto">
+              <button type="button" class="btn btn-sm btn-danger fs-6 w-100" @click="handleOrderClick('SELL', 'PUT')"
+                :data-bs-toggle="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? 'modal' : null"
+                :data-bs-target="['LMT', 'LMT_LTP'].includes(selectedOrderType) ? '#PlaceLimitOrderWindow' : null">
                 <kbd v-if="enableHotKeys">
                   <font-awesome-icon icon="arrow-right" />
                 </kbd>
                 Sell PE
               </button>
-              <button type="button"
-                class="btn btn-sm btn-outline-danger fs-6 dropdown-toggle dropdown-toggle-split w-25"
-                data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
-                <span class="visually-hidden">Toggle Dropdown</span>
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" @click="setOrderDetails('SELL', 'PUT')" data-bs-toggle="modal"
-                    data-bs-target="#PlaceLimitOrderWithResetOrderTypeWindow">Place Limit Order</a>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -457,18 +418,7 @@
           </ul>
         </nav>
         <div class="d-flex justify-content-between align-items-center col-12 col-md-6 order-1 order-md-2 my-3 my-md-0">
-          <b>
-            <span>
-              Total Buy Value: <span class="text-success">₹ {{ totalBuyValue.toFixed(2) }}</span>
-            </span>
-            <span class="ms-md-4 d-none d-md-inline">
-              Total Sell Value: <span class="text-danger">₹ {{ totalSellValue.toFixed(2) }}</span>
-            </span>
-            <span class="d-md-none">
-              <br>
-              Total Sell Value: <span class="text-danger">₹ {{ totalSellValue.toFixed(2) }}</span>
-            </span>
-          </b>
+          <!-- Total buy and sell values removed as requested -->
         </div>
       </div>
 
@@ -710,6 +660,9 @@ import {
 // WebSocket Composables
 import { connectWebSocket } from '@/composables/useWebSocket'
 
+// Position Management Composables
+import { updateOrdersAndPositions, fetchFlattradePositions, fetchShoonyaPositions, fetchFlattradeOrdersTradesBook, fetchShoonyaOrdersTradesBook, setupPeriodicOrderRefresh } from '@/composables/usePositionManagement'
+
 // App Settings Composables
 import { setDefaultExpiry, riskReached, targetReached } from '@/composables/useAppSettings'
 
@@ -740,20 +693,21 @@ import {
   openMarkerPosition,
   putLtpRangeWidth,
   putOpenMarkerPosition,
-  handleFormInputMouseScroll
+  handleFormInputMouseScroll,
+  updateTargetValue,
+  updateStoplossValue
 } from '@/composables/useTradeView'
 
 // PnL Calculations Composables
 import {
   netPnl, availableBalance, totalProfit, usedAmount,
   totalNetQty,
-  totalBuyValue,
-  totalSellValue,
   totalCapitalPercentage,
 } from '@/composables/usePnlCalculations'
 
 let timer;
 let positionCheckInterval;
+let orderRefreshInterval;
 
 
 // Lifecycle hooks
@@ -793,6 +747,9 @@ onMounted(async () => {
 
   // Initialize with the default active tab
   await setActiveFetchFunctionAndFetch();
+  
+  // Set up periodic refresh for orders and trades
+  orderRefreshInterval = setupPeriodicOrderRefresh();
 
   timer = setInterval(() => {
     currentTime.value = Date.now();
@@ -839,6 +796,9 @@ onBeforeUnmount(() => {
   clearInterval(timer);
   if (positionCheckInterval) {
     clearInterval(positionCheckInterval);
+  }
+  if (orderRefreshInterval) {
+    clearInterval(orderRefreshInterval);
   }
 });
 

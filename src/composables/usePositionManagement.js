@@ -286,6 +286,28 @@ export const updateOrdersAndPositions = async () => {
   }
 }
 
+// Set up periodic refresh for orders and trades
+export const setupPeriodicOrderRefresh = () => {
+  // Refresh orders and trades every 10 seconds
+  const refreshInterval = 10000
+  
+  // Create and return the interval
+  return setInterval(async () => {
+    if (!selectedBroker.value?.brokerName) return
+    
+    try {
+      console.log('Auto-refreshing orders and trades')
+      if (selectedBroker.value?.brokerName === 'Flattrade') {
+        await fetchFlattradeOrdersTradesBook()
+      } else if (selectedBroker.value?.brokerName === 'Shoonya') {
+        await fetchShoonyaOrdersTradesBook()
+      }
+    } catch (error) {
+      console.error('Error auto-refreshing orders:', error)
+    }
+  }, refreshInterval)
+}
+
 export const findNewPosition = (tradingSymbol) => {
   if (selectedBroker.value?.brokerName === 'Flattrade') {
     return flatTradePositionBook.value.find((p) => p.tsym === tradingSymbol)

@@ -9,6 +9,48 @@
     </div>
 </template>
 
+<style scoped>
+.notification-container {
+    position: relative;
+    z-index: 1000;
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+.notification-icon.has-notification {
+    color: #ffc107;
+    animation: pulse 1s infinite;
+}
+
+.notification-message {
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.5s ease, opacity 0.3s ease;
+    opacity: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 4px;
+    padding: 0;
+}
+
+.notification-message.show-message {
+    max-width: 300px;
+    opacity: 1;
+    padding: 0.25rem 0.5rem;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+</style>
+
 <script setup>
 import { ref, watch } from 'vue';
 import { FontAwesomeIcon } from '@/font-awesome';
@@ -37,12 +79,26 @@ const playNotificationSound = () => {
     try {
         if (audio.value) {
             audio.value.currentTime = 0; // Reset to start
-            const playPromise = audio.value.play();
-
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    // Auto-play was prevented, this is normal if no user interaction
-                    console.log('Notification sound blocked:', error);
+            
+            // Create user interaction context for audio playback
+            document.addEventListener('click', function audioPlayHandler() {
+                const playPromise = audio.value.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log('Notification sound blocked:', error);
+                    });
+                }
+                
+                // Remove the event listener after first click
+                document.removeEventListener('click', audioPlayHandler);
+            }, { once: true });
+            
+            // Also try to play immediately (will work if user already interacted)
+            const immediatePlayPromise = audio.value.play();
+            if (immediatePlayPromise !== undefined) {
+                immediatePlayPromise.catch(() => {
+                    // Silent catch - we'll try again on user interaction
                 });
             }
         }

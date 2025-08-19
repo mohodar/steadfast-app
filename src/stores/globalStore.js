@@ -51,12 +51,12 @@ export const flatTradePositionBook = ref([])
 export const shoonyaPositionBook = ref([])
 export const fundLimits = ref({})
 export const quantities = ref({
-  NIFTY: { lotSize: 75, maxLots: 360, freezeLimit: 72 },
-  BANKNIFTY: { lotSize: 15, maxLots: 300, freezeLimit: 60 },
+  NIFTY: { lotSize: 75, maxLots: 360, freezeLimit: 24 },
+  BANKNIFTY: { lotSize: 35, maxLots: 300, freezeLimit: 17 },
   FINNIFTY: { lotSize: 25, maxLots: 360, freezeLimit: 72 },
   MIDCPNIFTY: { lotSize: 50, maxLots: 280, freezeLimit: 56 },
-  SENSEX: { lotSize: 10, maxLots: 500, freezeLimit: 100 },
-  BANKEX: { lotSize: 15, maxLots: 300, freezeLimit: 60 }
+  SENSEX: { lotSize: 20, maxLots: 500, freezeLimit: 50 },
+  BANKEX: { lotSize: 35, maxLots: 300, freezeLimit: 17 }
 })
 export const availableQuantities = ref([])
 export const selectedStrike = ref({})
@@ -173,3 +173,4 @@ export const reconnectAttempts = ref(0)
 export const reconnectTimeout = ref(null)
 export const wsConnectionState = ref('disconnected')
 export const messageQueue = ref([])
+export const paperTradingMode = useLocalStorage('paperTradingMode', false)

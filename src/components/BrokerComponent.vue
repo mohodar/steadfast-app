@@ -30,16 +30,7 @@
             </span>
         </div>
 
-        <!-- Today's Expiry -->
-        <div
-            class="col-5 col-md-3 col-lg-3 d-flex align-items-center justify-content-lg-end justify-content-end mt-2 mt-md-0">
-            <span class="me-2">
-                <small class="text-muted">Expiry</small>
-                <span class="ms-1 fw-bold" :class="todayExpirySymbol ? 'text-danger' : 'text-secondary'">
-                    {{ todayExpirySymbol || '-' }}
-                </span>
-            </span>
-        </div>
+        <!-- Today's Expiry section removed as requested -->
     </section>
 </template>
 

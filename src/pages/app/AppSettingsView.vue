@@ -240,6 +240,17 @@
               </label>
             </div>
           </div>
+          <!-- Paper Trading Mode -->
+          <div class="col-12 col-md-6 col-lg-4 mt-3">
+            <label for="paperTradingMode" class="form-label">Paper Trading Mode</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="paperTradingMode" v-model="paperTradingMode" />
+              <label class="form-check-label" for="paperTradingMode">
+                {{ paperTradingMode ? 'Enabled' : 'Disabled' }}
+              </label>
+            </div>
+            <small class="text-muted">Simulate trades without real money</small>
+          </div>
         </div>
       </div>
     </div>
@@ -267,6 +278,7 @@ import {
   putStrikeOffset,
   expiryOffset,
   overtradeProtection,
+  paperTradingMode,
 
   // Notification Settings
   notificationSound,

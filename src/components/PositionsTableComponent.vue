@@ -11,11 +11,11 @@
                     <th scope="col">TSL / SL</th>
                     <th scope="col">LTP</th>
                     <th scope="col">Target</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">B.Avg</th>
-                    <th scope="col">S.Avg</th>
                     <th scope="col">Realized</th>
                     <th scope="col">Unrealized</th>
+                    <th scope="col">B.Avg</th>
+                    <th scope="col">S.Avg</th>
+                    <th scope="col">Type</th>
                 </tr>
             </thead>
             <tbody>
@@ -123,9 +123,6 @@
                             </div>
                         </td>
                         <td v-else>-</td>
-                        <td>{{ formatProductType(position.prd) }}</td>
-                        <td>{{ position.totbuyavgprc }}</td>
-                        <td>{{ position.totsellavgprc }}</td>
                         <td :class="position.rpnl > 0 ? 'text-success' : position.rpnl < 0 ? 'text-danger' : null">
                             {{ position.rpnl }}
                         </td>
@@ -133,6 +130,9 @@
                             :class="position.calculatedUrmtom > 0 ? 'text-success' : position.calculatedUrmtom < 0 ? 'text-danger' : null">
                             {{ position.calculatedUrmtom != null ? position.calculatedUrmtom.toFixed(2) : '-' }}
                         </td>
+                        <td>{{ position.totbuyavgprc }}</td>
+                        <td>{{ position.totsellavgprc }}</td>
+                        <td>{{ formatProductType(position.prd) }}</td>
                     </tr>
                 </template>
                 <tr v-else>
