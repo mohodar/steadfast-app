@@ -46,9 +46,9 @@
                                 <div class="col-12" v-if="trailingStoplosses[position.tsym] !== null">
                                     <div class="d-flex align-items-center">
                                         <span class="me-2">TSL:</span>
-                                        <span class="bg-danger text-white px-2 py-1 rounded">
-                                            {{ trailingStoplosses[position.tsym] }}
-                                        </span>
+                                        <input type="number" class="bg-danger text-white px-2 py-1 rounded" style="width: 80px; border: none;" 
+                                            v-model="trailingStoplosses[position.tsym]" 
+                                            @change="$emit('set-stoploss', position, 'trailing')">
                                     </div>
                                 </div>
                                 <div class="col-12" v-else-if="stoplosses[position.tsym] !== null">
@@ -57,9 +57,10 @@
                                             @click="$emit('decrease-stoploss', position)">
                                             - SL
                                         </button>
-                                        <span class="d-flex align-items-center bg-danger text-white px-2">
-                                            {{ stoplosses[position.tsym] }}
-                                        </span>
+                                        <input type="number" class="d-flex align-items-center bg-danger text-white px-2" style="width: 80px; border: none;" 
+                                            v-model="stoplosses[position.tsym]" 
+                                            @change="$emit('set-stoploss', position, 'static')">
+                                        
                                         <button class="btn btn-sm btn-outline-success"
                                             @click="$emit('increase-stoploss', position)">
                                             + SL
@@ -100,9 +101,10 @@
                                             @click="$emit('decrease-target', position)">
                                             - TG
                                         </button>
-                                        <span class="d-flex align-items-center bg-success text-white px-2">
-                                            {{ targets[position.tsym] }}
-                                        </span>
+                                        <input type="number" class="d-flex align-items-center bg-success text-white px-2" style="width: 80px; border: none;" 
+                                            v-model="targets[position.tsym]" 
+                                            @change="$emit('set-target', position)">
+                                        
                                         <button class="btn btn-sm btn-outline-success"
                                             @click="$emit('increase-target', position)">
                                             + TG
@@ -178,14 +180,16 @@
                 <!-- SL & TSL -->
                 <div v-if="position.netqty != 0" class="mb-2">
                     <div v-if="trailingStoplosses[position.tsym] !== null" class="d-flex align-items-center">
-                        <span class="me-2">TSL:</span>
-                        <span class="bg-danger text-white px-2 py-1 rounded">
-                            {{ trailingStoplosses[position.tsym] }}
-                        </span>
-                    </div>
+                                    <span class="me-2">TSL:</span>
+                                    <input type="number" class="bg-danger text-white px-2 py-1 rounded" style="width: 80px; border: none;" 
+                                        v-model="trailingStoplosses[position.tsym]" 
+                                        @change="$emit('set-stoploss', position, 'trailing')">
+                                </div>
                     <div v-else-if="stoplosses[position.tsym] !== null" class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-danger" @click="$emit('decrease-stoploss', position)">-</button>
-                        <span class="btn btn-danger">{{ stoplosses[position.tsym] }}</span>
+                        <input type="number" class="btn btn-danger" style="width: 80px; border: none;" 
+                            v-model="stoplosses[position.tsym]" 
+                            @change="$emit('set-stoploss', position, 'static')">
                         <button class="btn btn-outline-danger" @click="$emit('increase-stoploss', position)">+</button>
                     </div>
                     <div v-else class="btn-group btn-group-sm" role="group">
@@ -198,7 +202,9 @@
                 <div v-if="position.netqty != 0" class="mb-2">
                     <div v-if="targets[position.tsym] !== null" class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-success" @click="$emit('decrease-target', position)">-</button>
-                        <span class="btn btn-success">{{ targets[position.tsym] }}</span>
+                        <input type="number" class="btn btn-success" style="width: 80px; border: none;" 
+                            v-model="targets[position.tsym]" 
+                            @change="$emit('set-target', position)">
                         <button class="btn btn-outline-success" @click="$emit('increase-target', position)">+</button>
                     </div>
                     <div v-else class="btn-group btn-group-sm" role="group">

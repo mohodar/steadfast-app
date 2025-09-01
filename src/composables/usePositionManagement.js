@@ -30,6 +30,9 @@ import { subscribeToLTP } from '@/composables/useMarketData'
 // WebSocket Composables
 import { subscribeToOptions, subscribeToPositionLTPs } from '@/composables/useWebSocket'
 
+// Risk Management Composables
+import { setStoploss, setTarget } from '@/composables/useRiskManagement'
+
 export const updateFundLimits = async () => {
   await fetchFundLimit()
   // console.log('Updated Fund Limits:', fundLimits.value);
@@ -206,6 +209,12 @@ export const fetchFlattradePositions = async () => {
       updatePositionSecurityIds()
       subscribeToPositionLTPs()
       subscribeToOptions()
+      
+      // Automatically apply predefined stoplosses and targets to positions
+      applyPredefinedRiskManagement(shoonyaPositionBook.value)
+      
+      // Automatically apply predefined stoplosses and targets to positions
+      applyPredefinedRiskManagement(flatTradePositionBook.value)
     } else if (
       positionBookRes.data.emsg === 'no data' ||
       positionBookRes.data.emsg.includes('no data')
@@ -261,6 +270,9 @@ export const fetchShoonyaPositions = async () => {
       updatePositionSecurityIds()
       subscribeToPositionLTPs()
       subscribeToOptions()
+      
+      // Automatically apply predefined stoplosses and targets to positions
+      applyPredefinedRiskManagement(shoonyaPositionBook.value)
     } else if (
       positionBookRes.data.emsg === 'no data' ||
       positionBookRes.data.emsg.includes('no data')
@@ -284,6 +296,28 @@ export const updateOrdersAndPositions = async () => {
   } else if (selectedBroker.value?.brokerName === 'Shoonya') {
     await Promise.all([fetchShoonyaOrdersTradesBook(), fetchShoonyaPositions()])
   }
+}
+
+// Apply predefined risk management rules to positions
+export const applyPredefinedRiskManagement = (positions) => {
+  if (!positions || positions.length === 0) return
+  
+  positions.forEach(position => {
+    const qty = parseInt(position.netqty || position.netQty)
+    
+    // Skip positions with zero quantity
+    if (qty === 0) return
+    
+    // Check if position already has stoploss or target set
+    // If not, apply the predefined values
+    console.log(`Applying predefined risk management for position: ${position.tsym}`)
+    
+    // Apply stoploss
+    setStoploss(position, 'static')
+    
+    // Apply target
+    setTarget(position)
+  })
 }
 
 // Set up periodic refresh for orders and trades
